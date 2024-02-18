@@ -16,6 +16,11 @@ itertools = "0.12.1"
 log = "0.4.20"
 reqwest = "0.11.24"
 reqwest-middleware = "0.2.4"
+schemars = { package = "apistos-schemars", version = "0.8" }
 scraper = "0.18.1"
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = "1.0.113"
+utoipa = { version = "4.2.0", features = ["actix_extras"] }
+utoipa-rapidoc = { version = "3.0.0", features = ["actix-web"] }
+utoipa-redoc = { version = "3.0.0", features = ["actix-web"] }
+utoipa-swagger-ui = { version = "6.0.0", features = ["actix-web"] }

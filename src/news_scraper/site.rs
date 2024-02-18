@@ -4,17 +4,25 @@ use futures::future::join_all;
 use reqwest::Client;
 use scraper::{Selector, Html};
 use itertools::Itertools;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use super::article::Article;
 
+#[derive(Serialize, ToSchema)]
 pub struct Site {
     pub name: String,
     pub url: String,
     pub base_url: String,
+    #[serde(skip)]
     link_selector: Selector,
+    #[serde(skip)]
     title_selector: Selector,
+    #[serde(skip)]
     subtitle_selector: Selector,
+    #[serde(skip)]
     author_selector: Selector,
+    #[serde(skip)]
     date_selector: Selector,
 }
 
@@ -82,7 +90,7 @@ impl Site {
             author,
             date,
             url,
-            origin: self.name.clone(),
+            source: self.name.clone(),
         })
     }
 }
