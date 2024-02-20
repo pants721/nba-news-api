@@ -1,2 +1,2 @@
-pub mod stories;
 pub mod index;
+pub mod stories;

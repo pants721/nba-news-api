@@ -1,10 +1,13 @@
-use std::{error};
 use futures::future::join_all;
-use lazy_static::lazy_static;
-use reqwest::{Client, header::{HeaderMap, USER_AGENT}};
-use scraper::{Selector, Html};
 use itertools::Itertools;
-use serde::{Serialize};
+use lazy_static::lazy_static;
+use reqwest::{
+    header::{HeaderMap, USER_AGENT},
+    Client,
+};
+use scraper::{Html, Selector};
+use serde::Serialize;
+use std::error;
 use utoipa::ToSchema;
 
 use super::article::Article;
@@ -29,43 +32,55 @@ pub struct Site {
 }
 
 impl Site {
-    pub async fn get_top_links(&self, client: Client) -> Result<Vec<String>, Box<dyn error::Error>> {
+    pub async fn get_top_links(
+        &self,
+        client: Client,
+    ) -> Result<Vec<String>, Box<dyn error::Error>> {
         let body = client
             .get(&self.url)
             .headers(self.headers.clone())
             .send()
             .await?
-            .text().await?;
+            .text()
+            .await?;
         let doc = Html::parse_document(&body);
 
         let links = doc.select(&self.link_selector);
 
-        Ok(
-            links
-                .filter_map(|a_tag| a_tag.value().attr("href"))
-                .map(|link| self.base_url.clone() + link)
-                .collect_vec()
-        )
-    }
-
-    pub async fn get_top_articles(&self, client: Client) -> Result<Vec<Article>, Box<dyn error::Error>> {
-        Ok(join_all(self.get_top_links(client.clone()).await?.iter()
-            .map(|link| {
-                self.parse_article(link.to_string(), client.clone())
-            }))
-            .await
-            .into_iter()
-            .filter_map(|x| x.ok())
+        Ok(links
+            .filter_map(|a_tag| a_tag.value().attr("href"))
+            .map(|link| self.base_url.clone() + link)
             .collect_vec())
     }
 
-    async fn parse_article(&self, url: String, client: Client) -> Result<Article, Box<dyn error::Error>> {
+    pub async fn get_top_articles(
+        &self,
+        client: Client,
+    ) -> Result<Vec<Article>, Box<dyn error::Error>> {
+        Ok(join_all(
+            self.get_top_links(client.clone())
+                .await?
+                .iter()
+                .map(|link| self.parse_article(link.to_string(), client.clone())),
+        )
+        .await
+        .into_iter()
+        .filter_map(|x| x.ok())
+        .collect_vec())
+    }
+
+    async fn parse_article(
+        &self,
+        url: String,
+        client: Client,
+    ) -> Result<Article, Box<dyn error::Error>> {
         let body = client
             .get(&url)
             .header("User-Agent", "")
             .send()
             .await?
-            .text().await?;
+            .text()
+            .await?;
 
         let doc = Html::parse_document(&body);
 
@@ -86,7 +101,7 @@ impl Site {
             Some(r) => r.inner_html(),
             None => "".to_string(),
         };
-        
+
         Ok(Article {
             title,
             subtitle,
@@ -128,8 +143,5 @@ lazy_static! {
 }
 
 pub fn get_all() -> Vec<&'static Site> {
-        vec![
-            &ESPN,
-            &NBA,
-        ]
+    vec![&ESPN, &NBA]
 }

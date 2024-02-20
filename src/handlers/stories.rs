@@ -1,8 +1,12 @@
-use actix_web::{web::{Data, Json, self, ServiceConfig}, get, Result};
+use crate::news_scraper::{article::Article, site};
+use actix_web::{
+    get,
+    web::{self, Data, Json, ServiceConfig},
+    Result,
+};
 use futures::future::try_join_all;
-use reqwest::Client;
 use itertools::Itertools;
-use crate::news_scraper::{site, article::Article};
+use reqwest::Client;
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
@@ -18,15 +22,18 @@ pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
     )
 )]
 #[get("/top")]
-pub async fn get_top_articles(
-    reqwest_client: Data<Client>,
-) -> Result<Json<Vec<Article>>> {
-    Ok(Json(try_join_all(
-        site::get_all().iter()
-            .map(|site| site.get_top_articles(reqwest_client.get_ref().clone()))
-    )
+pub async fn get_top_articles(reqwest_client: Data<Client>) -> Result<Json<Vec<Article>>> {
+    Ok(Json(
+        try_join_all(
+            site::get_all()
+                .iter()
+                .map(|site| site.get_top_articles(reqwest_client.get_ref().clone())),
+        )
         .await?
-        .into_iter().flatten().collect_vec())) // TODO: there has to be a better way to flatten this, but flat_map is weird here
+        .into_iter()
+        .flatten()
+        .collect_vec(),
+    )) // TODO: there has to be a better way to flatten this, but flat_map is weird here
 }
 
 #[utoipa::path(
@@ -43,15 +50,16 @@ pub async fn get_top_articles_from_origin(
     path: web::Path<String>,
 ) -> Result<Json<Vec<Article>>> {
     let source = path.into_inner();
-    Ok(Json(try_join_all(
-        site::get_all().iter()
-            .map(|site| site.get_top_articles(reqwest_client.get_ref().clone()))
-    )
+    Ok(Json(
+        try_join_all(
+            site::get_all()
+                .iter()
+                .map(|site| site.get_top_articles(reqwest_client.get_ref().clone())),
+        )
         .await?
         .into_iter()
         .flatten()
         .filter(|article| article.source == source)
-        .collect_vec()))
+        .collect_vec(),
+    ))
 }
-
-

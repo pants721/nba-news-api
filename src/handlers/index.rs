@@ -1,11 +1,14 @@
-use actix_web::{web::{Json, ServiceConfig}, Responder, get};
+use actix_web::{
+    get,
+    web::{Json, ServiceConfig},
+    Responder,
+};
 
 use crate::news_scraper::site;
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
-        config
-            .service(get_sources);
+        config.service(get_sources);
     }
 }
 

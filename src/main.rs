@@ -1,14 +1,14 @@
-use actix_web::{web::{Data}, HttpServer, App, middleware};
+use actix_web::{middleware, web::Data, App, HttpServer};
+use handlers::{index, stories};
+use news_scraper::article;
 use reqwest::Client;
-use handlers::{stories, index};
 use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::Redoc;
 use utoipa_swagger_ui::SwaggerUi;
-use news_scraper::article;
 
-mod news_scraper;
 mod handlers;
+mod news_scraper;
 
 #[actix_web::main]
 async fn main() -> Result<(), std::io::Error> {
@@ -34,7 +34,7 @@ async fn main() -> Result<(), std::io::Error> {
 
     let reqwest_client = Client::new();
     let openapi = ApiDoc::openapi();
-    
+
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(reqwest_client.clone()))
@@ -47,7 +47,7 @@ async fn main() -> Result<(), std::io::Error> {
             .configure(index::configure())
             .configure(stories::configure())
     })
-        .bind(("127.0.0.1", 8080))?
-        .run()
-        .await
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 }
