@@ -8,11 +8,11 @@ edition = "2021"
 [dependencies]
 actix-web = "4.5.1"
 anyhow = "1.0.79"
-cached = "0.48.1"
 env_logger = "0.11.2"
 futures = "0.3.30"
 http-cache-reqwest = { version = "0.13.0", features = ["manager-moka"] }
 itertools = "0.12.1"
+lazy_static = "1.4.0"
 log = "0.4.20"
 reqwest = "0.11.24"
 reqwest-middleware = "0.2.4"

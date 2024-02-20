@@ -1,4 +1,4 @@
-use actix_web::{web::{Data, scope}, HttpServer, App, middleware};
+use actix_web::{web::{Data}, HttpServer, App, middleware};
 use reqwest::Client;
 use handlers::{stories, index};
 use utoipa::OpenApi;

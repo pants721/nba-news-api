@@ -1,15 +1,15 @@
-use std::error;
-use cached::proc_macro::once;
+use std::{error};
 use futures::future::join_all;
+use lazy_static::lazy_static;
 use reqwest::Client;
 use scraper::{Selector, Html};
 use itertools::Itertools;
-use serde::{Deserialize, Serialize};
+use serde::{Serialize};
 use utoipa::ToSchema;
 
 use super::article::Article;
 
-#[derive(Serialize, ToSchema)]
+#[derive(Clone, Serialize, ToSchema)]
 pub struct Site {
     pub name: String,
     pub url: String,
@@ -95,42 +95,34 @@ impl Site {
     }
 }
 
-pub mod sites {
-    use super::*;
+lazy_static! {
+    static ref ESPN: Site = Site {
+        name: "espn".to_string(),
+        url: "https://espn.com/nba".to_string(),
+        base_url: "https://espn.com".to_string(),
+        link_selector: Selector::parse("section[class*=col-three] ul[class*='headlineStack'] > li > a").unwrap(),
+        title_selector: Selector::parse("header[class=article-header] > h1").unwrap(),
+        subtitle_selector: Selector::parse("none").unwrap(), // TODO: Figure out how to handle
+        // a site not having an article attribute
+        author_selector: Selector::parse("div:not([class=author-img])[class*=author]").unwrap(),
+        date_selector: Selector::parse("div[class=article-meta] span[class*=timestamp]").unwrap(),
+    };
 
-    pub fn get_all() -> Vec<Site> {
-        vec![
-            espn(),
-            nba(),
-        ]
-    }
-
-    pub fn espn() -> Site {
-        Site {
-            name: "espn".to_string(),
-            url: "https://espn.com/nba".to_string(),
-            base_url: "https://espn.com".to_string(),
-            link_selector: Selector::parse("section[class*=col-three] ul[class*='headlineStack'] > li > a").unwrap(),
-            title_selector: Selector::parse("header[class=article-header] > h1").unwrap(),
-            subtitle_selector: Selector::parse("none").unwrap(), // TODO: Figure out how to handle
-            // a site not having an article attribute
-            author_selector: Selector::parse("div:not([class=author-img])[class*=author]").unwrap(),
-            date_selector: Selector::parse("div[class=article-meta] span[class*=timestamp]").unwrap(),
-        }
-    }
-
-    pub fn nba() -> Site {
-        Site {
-            name: "nba".to_string(),
-            url: "https://nba.com/news/category/top-stories".to_string(),
-            base_url: "https://www.nba.com".to_string(),
-            link_selector: Selector::parse("article[class*='Article'] > a").unwrap(),
-            title_selector: Selector::parse("h1[class*=ahTitle]").unwrap(),
-            subtitle_selector: Selector::parse("p[class*=ahSubtitle]").unwrap(),
-            author_selector: Selector::parse("p[class*=authorName]").unwrap(),
-            date_selector: Selector::parse("time[class*=ahDate]").unwrap(),
-        }
-    }
-
+    static ref NBA: Site = Site {
+        name: "nba".to_string(),
+        url: "https://nba.com/news/category/top-stories".to_string(),
+        base_url: "https://www.nba.com".to_string(),
+        link_selector: Selector::parse("article[class*='Article'] > a").unwrap(),
+        title_selector: Selector::parse("h1[class*=ahTitle]").unwrap(),
+        subtitle_selector: Selector::parse("p[class*=ahSubtitle]").unwrap(),
+        author_selector: Selector::parse("p[class*=authorName]").unwrap(),
+        date_selector: Selector::parse("time[class*=ahDate]").unwrap(),
+    };
 }
 
+pub fn get_all() -> Vec<&'static Site> {
+        vec![
+            &ESPN,
+            &NBA,
+        ]
+}

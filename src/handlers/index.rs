@@ -1,6 +1,6 @@
 use actix_web::{web::{Json, ServiceConfig}, Responder, get};
 
-use crate::news_scraper::site::sites;
+use crate::news_scraper::site;
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
@@ -16,5 +16,5 @@ pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
 )]
 #[get("/sources")]
 pub async fn get_sources() -> impl Responder {
-    Json(sites::get_all())
+    Json(site::get_all())
 }

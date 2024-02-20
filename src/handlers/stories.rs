@@ -2,7 +2,7 @@ use actix_web::{Responder, web::{Data, Json, self, ServiceConfig}, get};
 use futures::future::join_all;
 use reqwest::Client;
 use itertools::Itertools;
-use crate::news_scraper::{site::sites, article::Article};
+use crate::news_scraper::{site};
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
@@ -23,7 +23,7 @@ pub async fn get_top_articles(
 ) -> impl Responder {
     Json(
         join_all(
-            sites::get_all()
+            site::get_all()
                 .iter()
                 .map(|site| async {
                     site.get_top_articles(reqwest_client.get_ref().clone())
@@ -53,7 +53,7 @@ pub async fn get_top_articles_from_origin(
     let source = path.into_inner();
     Json(
         join_all(
-            sites::get_all()
+            site::get_all()
                 .iter()
                 .map(|site| async {
                     site.get_top_articles(reqwest_client.get_ref().clone())
