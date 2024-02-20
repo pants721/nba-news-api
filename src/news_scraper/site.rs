@@ -49,13 +49,14 @@ impl Site {
     }
 
     pub async fn get_top_articles(&self, client: Client) -> Result<Vec<Article>, Box<dyn error::Error>> {
-        Ok(join_all(self.get_top_links(client.clone())
-            .await?.iter()
-            .map(|link| async {
-                self.parse_article(link.to_string(), client.clone()).await.unwrap()
-            })
+        Ok(join_all(self.get_top_links(client.clone()).await?.iter()
+            .map(|link| {
+                self.parse_article(link.to_string(), client.clone())
+            }))
+            .await
+            .into_iter()
+            .filter_map(|x| x.ok())
             .collect_vec())
-            .await)
     }
 
     async fn parse_article(&self, url: String, client: Client) -> Result<Article, Box<dyn error::Error>> {

@@ -1,8 +1,8 @@
-use actix_web::{Responder, web::{Data, Json, self, ServiceConfig}, get};
-use futures::future::join_all;
+use actix_web::{web::{Data, Json, self, ServiceConfig}, get, Result};
+use futures::future::try_join_all;
 use reqwest::Client;
 use itertools::Itertools;
-use crate::news_scraper::{site};
+use crate::news_scraper::{site, article::Article};
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
@@ -20,21 +20,13 @@ pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
 #[get("/top")]
 pub async fn get_top_articles(
     reqwest_client: Data<Client>,
-) -> impl Responder {
-    Json(
-        join_all(
-            site::get_all()
-                .iter()
-                .map(|site| async {
-                    site.get_top_articles(reqwest_client.get_ref().clone())
-                        .await.unwrap()
-                })
-        )
-            .await
-            .into_iter()
-            .flatten()
-            .collect_vec()
+) -> Result<Json<Vec<Article>>> {
+    Ok(Json(try_join_all(
+        site::get_all().iter()
+            .map(|site| site.get_top_articles(reqwest_client.get_ref().clone()))
     )
+        .await?
+        .into_iter().flatten().collect_vec())) // TODO: there has to be a better way to flatten this, but flat_map is weird here
 }
 
 #[utoipa::path(
@@ -49,24 +41,17 @@ pub async fn get_top_articles(
 pub async fn get_top_articles_from_origin(
     reqwest_client: Data<Client>,
     path: web::Path<String>,
-) -> impl Responder {
+) -> Result<Json<Vec<Article>>> {
     let source = path.into_inner();
-    Json(
-        join_all(
-            site::get_all()
-                .iter()
-                .map(|site| async {
-                    site.get_top_articles(reqwest_client.get_ref().clone())
-                        .await.unwrap()
-                        .into_iter()
-                        .filter(|article| article.source == source)
-                })
-        )
-            .await
-            .into_iter()
-            .flatten()
-            .collect_vec()
+    Ok(Json(try_join_all(
+        site::get_all().iter()
+            .map(|site| site.get_top_articles(reqwest_client.get_ref().clone()))
     )
+        .await?
+        .into_iter()
+        .flatten()
+        .filter(|article| article.source == source)
+        .collect_vec()))
 }
 
 
