@@ -1,7 +1,7 @@
 use std::{error};
 use futures::future::join_all;
 use lazy_static::lazy_static;
-use reqwest::Client;
+use reqwest::{Client, header::{HeaderMap, USER_AGENT}};
 use scraper::{Selector, Html};
 use itertools::Itertools;
 use serde::{Serialize};
@@ -24,13 +24,15 @@ pub struct Site {
     author_selector: Selector,
     #[serde(skip)]
     date_selector: Selector,
+    #[serde(skip)]
+    headers: HeaderMap,
 }
 
 impl Site {
     pub async fn get_top_links(&self, client: Client) -> Result<Vec<String>, Box<dyn error::Error>> {
         let body = client
             .get(&self.url)
-            .header("User-Agent", "")
+            .headers(self.headers.clone())
             .send()
             .await?
             .text().await?;
@@ -106,6 +108,7 @@ lazy_static! {
         // a site not having an article attribute
         author_selector: Selector::parse("div:not([class=author-img])[class*=author]").unwrap(),
         date_selector: Selector::parse("div[class=article-meta] span[class*=timestamp]").unwrap(),
+        headers: HeaderMap::new(),
     };
 
     static ref NBA: Site = Site {
@@ -117,6 +120,9 @@ lazy_static! {
         subtitle_selector: Selector::parse("p[class*=ahSubtitle]").unwrap(),
         author_selector: Selector::parse("p[class*=authorName]").unwrap(),
         date_selector: Selector::parse("time[class*=ahDate]").unwrap(),
+        headers: HeaderMap::from_iter(vec![
+            (USER_AGENT, "".parse().unwrap())
+        ].into_iter()),
     };
 }
 
