@@ -81,6 +81,14 @@ impl Site {
             .await?
             .text()
             .await?;
+        Ok(self.parse_article_text(body, url).await?)
+    }
+
+    async fn parse_article_text(
+        &self,
+        body: String,
+        url: String,
+    ) -> Result<Article, Box<dyn error::Error>> {
 
         let doc = Html::parse_document(&body);
 
@@ -144,4 +152,46 @@ lazy_static! {
 
 pub fn get_all() -> Vec<&'static Site> {
     vec![&ESPN, &NBA]
+}
+
+mod tests {
+    use super::*;
+    use scraper::Html;
+
+    fn site_mock() -> Site {
+        Site {
+            name: "".to_string(),
+            url: "".to_string(),
+            base_url: "".to_string(),
+            link_selector: Selector::parse("none").unwrap(),
+            title_selector: Selector::parse("h1[class*=title]").unwrap(),
+            subtitle_selector: Selector::parse("p[class=subtitle]").unwrap(),
+            author_selector: Selector::parse("p[class*=author]").unwrap(),
+            date_selector: Selector::parse("time").unwrap(),
+            headers: HeaderMap::new(),
+        }
+    }
+
+    fn article_expected() -> Article {
+        Article { 
+            title: "title 1".to_string(), 
+            subtitle: "subtitle 1".to_string(), 
+            author: "lucas".to_string(), 
+            date: "2:00PM".to_string(), 
+            url: "".to_string(), 
+            source: "".to_string() 
+        }
+    }
+
+    fn article_mock_html() -> String {
+        Html::parse_fragment(r#"<!DOCTYPE html> <html> <head> <title>Page Title</title> </head> <body> <h1 class="asdasdasdasd_title_____">title 1</h1> <p class="subtitle">subtitle 1</p> <p class="thisistheauthor">lucas</p> <time>2:00PM</time> <p class="content"> blagh blahg</p> OTHER STUFF WOW LOOKS AT THIS INTERESTING STUFF </body> </html>"#).html()
+    }
+
+    #[actix_rt::test]
+    async fn parse_article() {
+        let actual_article = Site::parse_article_text(&site_mock(), article_mock_html(), "".to_string()).await.unwrap();
+        
+        assert_eq!(actual_article, article_expected());
+    }
+
 }
