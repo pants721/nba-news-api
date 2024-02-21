@@ -32,10 +32,10 @@ pub struct Site {
 }
 
 impl Site {
-    pub async fn get_top_links(
+    pub async fn get_top_articles(
         &self,
         client: Client,
-    ) -> Result<Vec<String>, Box<dyn error::Error>> {
+    ) -> Result<Vec<Article>, Box<dyn error::Error>> {
         let body = client
             .get(&self.url)
             .headers(self.headers.clone())
@@ -43,6 +43,22 @@ impl Site {
             .await?
             .text()
             .await?;
+        Ok(join_all(
+            self.get_top_links(body)
+                .await?
+                .iter()
+                .map(|link| self.parse_article(link.to_string(), client.clone())),
+        )
+        .await
+        .into_iter()
+        .filter_map(|x| x.ok())
+        .collect_vec())
+    }
+
+    async fn get_top_links(
+        &self,
+        body: String,
+    ) -> Result<Vec<String>, Box<dyn error::Error>> {
         let doc = Html::parse_document(&body);
 
         let links = doc.select(&self.link_selector);
@@ -53,21 +69,6 @@ impl Site {
             .collect_vec())
     }
 
-    pub async fn get_top_articles(
-        &self,
-        client: Client,
-    ) -> Result<Vec<Article>, Box<dyn error::Error>> {
-        Ok(join_all(
-            self.get_top_links(client.clone())
-                .await?
-                .iter()
-                .map(|link| self.parse_article(link.to_string(), client.clone())),
-        )
-        .await
-        .into_iter()
-        .filter_map(|x| x.ok())
-        .collect_vec())
-    }
 
     async fn parse_article(
         &self,
@@ -81,6 +82,14 @@ impl Site {
             .await?
             .text()
             .await?;
+        Ok(self.parse_article_text(body, url).await?)
+    }
+
+    async fn parse_article_text(
+        &self,
+        body: String,
+        url: String,
+    ) -> Result<Article, Box<dyn error::Error>> {
 
         let doc = Html::parse_document(&body);
 
@@ -144,4 +153,61 @@ lazy_static! {
 
 pub fn get_all() -> Vec<&'static Site> {
     vec![&ESPN, &NBA]
+}
+
+mod tests {
+    use super::*;
+    use scraper::Html;
+
+    fn site_mock() -> Site {
+        Site {
+            name: "".to_string(),
+            url: "".to_string(),
+            base_url: "".to_string(),
+            link_selector: Selector::parse("div[class*=big-scoop] > a").unwrap(),
+            title_selector: Selector::parse("h1[class*=title]").unwrap(),
+            subtitle_selector: Selector::parse("p[class=subtitle]").unwrap(),
+            author_selector: Selector::parse("p[class*=author]").unwrap(),
+            date_selector: Selector::parse("time").unwrap(),
+            headers: HeaderMap::new(),
+        }
+    }
+
+    fn article_expected() -> Article {
+        Article { 
+            title: "title 1".to_string(), 
+            subtitle: "subtitle 1".to_string(), 
+            author: "lucas".to_string(), 
+            date: "2:00PM".to_string(), 
+            url: "".to_string(), 
+            source: "".to_string() 
+        }
+    }
+
+    fn article_mock_html() -> String {
+        r#"<!DOCTYPE html> <html> <head> <title>Page Title</title> </head> <body> <h1 class="asdasdasdasd_title_____">title 1</h1> <p class="subtitle">subtitle 1</p> <p class="thisistheauthor">lucas</p> <time>2:00PM</time> <p class="content"> blagh blahg</p> OTHER STUFF WOW LOOKS AT THIS INTERESTING STUFF </body> </html>"#.to_string()
+    }
+
+    fn home_mock_html() -> String {
+        r#"<!DOCTYPE html> <html> <head> <title>Page Title</title> </head> <body> <div> <div class="the-big-scoop"> <a href="story-link.com">link</a> </div> </div> </body> </html>"#.to_string()
+    }
+
+    #[actix_rt::test]
+    async fn parse_article() {
+        let actual_article = Site::parse_article_text(&site_mock(), article_mock_html(), "".to_string()).await.unwrap();
+        
+        assert_eq!(actual_article, article_expected());
+    }
+
+    #[actix_rt::test]
+    async fn find_top_links() {
+        let links = vec![
+            "story-link.com".to_string(),
+        ];
+
+        let actual_links = Site::get_top_links(&site_mock(), home_mock_html()).await.unwrap();
+
+        assert_eq!(links, actual_links);
+    }
+
 }

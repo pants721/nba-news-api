@@ -29,10 +29,10 @@ pub async fn get_top_articles(reqwest_client: Data<Client>) -> Result<Json<Vec<A
                 .iter()
                 .map(|site| site.get_top_articles(reqwest_client.get_ref().clone())),
         )
-        .await?
-        .into_iter()
-        .flatten()
-        .collect_vec(),
+            .await?
+            .into_iter()
+            .flatten()
+            .collect_vec()
     )) // TODO: there has to be a better way to flatten this, but flat_map is weird here
 }
 
@@ -56,10 +56,10 @@ pub async fn get_top_articles_from_origin(
                 .iter()
                 .map(|site| site.get_top_articles(reqwest_client.get_ref().clone())),
         )
-        .await?
-        .into_iter()
-        .flatten()
-        .filter(|article| article.source == source)
-        .collect_vec(),
+            .await?
+            .into_iter()
+            .flatten()
+            .filter(|article| article.source == source)
+            .collect_vec(),
     ))
 }
