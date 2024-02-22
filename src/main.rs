@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::{middleware, web::Data, App, HttpServer};
 use handlers::{index, stories};
 use news_scraper::article;
@@ -39,6 +40,7 @@ async fn main() -> Result<(), std::io::Error> {
         App::new()
             .app_data(Data::new(reqwest_client.clone()))
             .wrap(middleware::Logger::default())
+            .wrap(Cors::permissive())
             .service(Redoc::new(openapi.clone()))
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),

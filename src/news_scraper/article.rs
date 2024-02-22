@@ -7,6 +7,7 @@ pub struct Article {
     pub subtitle: String,
     pub author: String,
     pub date: String,
+    pub base_url: String,
     pub url: String,
     pub source: String,
 }

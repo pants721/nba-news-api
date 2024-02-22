@@ -55,10 +55,7 @@ impl Site {
         .collect_vec())
     }
 
-    async fn get_top_links(
-        &self,
-        body: String,
-    ) -> Result<Vec<String>, Box<dyn error::Error>> {
+    async fn get_top_links(&self, body: String) -> Result<Vec<String>, Box<dyn error::Error>> {
         let doc = Html::parse_document(&body);
 
         let links = doc.select(&self.link_selector);
@@ -68,7 +65,6 @@ impl Site {
             .map(|link| self.base_url.clone() + link)
             .collect_vec())
     }
-
 
     async fn parse_article(
         &self,
@@ -90,7 +86,6 @@ impl Site {
         body: String,
         url: String,
     ) -> Result<Article, Box<dyn error::Error>> {
-
         let doc = Html::parse_document(&body);
 
         // TODO: Extract this into a function
@@ -116,6 +111,7 @@ impl Site {
             subtitle,
             author,
             date,
+            base_url: self.base_url.clone(),
             url,
             source: self.name.clone(),
         })
@@ -174,13 +170,14 @@ mod tests {
     }
 
     fn article_expected() -> Article {
-        Article { 
-            title: "title 1".to_string(), 
-            subtitle: "subtitle 1".to_string(), 
-            author: "lucas".to_string(), 
-            date: "2:00PM".to_string(), 
-            url: "".to_string(), 
-            source: "".to_string() 
+        Article {
+            title: "title 1".to_string(),
+            subtitle: "subtitle 1".to_string(),
+            author: "lucas".to_string(),
+            date: "2:00PM".to_string(),
+            base_url: "".to_string(),
+            url: "".to_string(),
+            source: "".to_string(),
         }
     }
 
@@ -194,20 +191,22 @@ mod tests {
 
     #[actix_rt::test]
     async fn parse_article() {
-        let actual_article = Site::parse_article_text(&site_mock(), article_mock_html(), "".to_string()).await.unwrap();
-        
+        let actual_article =
+            Site::parse_article_text(&site_mock(), article_mock_html(), "".to_string())
+                .await
+                .unwrap();
+
         assert_eq!(actual_article, article_expected());
     }
 
     #[actix_rt::test]
     async fn find_top_links() {
-        let links = vec![
-            "story-link.com".to_string(),
-        ];
+        let links = vec!["story-link.com".to_string()];
 
-        let actual_links = Site::get_top_links(&site_mock(), home_mock_html()).await.unwrap();
+        let actual_links = Site::get_top_links(&site_mock(), home_mock_html())
+            .await
+            .unwrap();
 
         assert_eq!(links, actual_links);
     }
-
 }
