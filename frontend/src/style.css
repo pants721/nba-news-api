@@ -1,0 +1,27 @@
+:root {
+	font-family: arial;
+	line-height: 1.5;
+	font-weight: 400;
+
+	color: #ffffff;
+	background-color: #222;
+
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	-webkit-text-size-adjust: 100%;
+}
+
+.article-link {
+	text-decoration: none;
+	color: inherit;
+}
+
+.article-source-link {
+	text-decoration: none;
+}
+
+.article-source-link:hover {
+	text-decoration: underline;
+}
